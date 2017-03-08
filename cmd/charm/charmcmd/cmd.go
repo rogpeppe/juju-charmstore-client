@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/juju/cmd"
@@ -136,7 +137,7 @@ func newCharmStoreClient(ctxt *cmd.Context, auth authInfo, channel params.Channe
 	bakeryClient.Jar = jar
 	tokenStore := ussologin.NewFileTokenStore(ussoTokenPath())
 	filler := &progressClearFiller{
-		filler: &esform.IOFiller{
+		f: &esform.IOFiller{
 			In:  ctxt.Stdin,
 			Out: ctxt.Stdout,
 		},
@@ -178,8 +179,8 @@ func uploadResource(ctxt *cmd.Context, client *csClient, charmId *charm.URL, nam
 	}
 	d := newProgressDisplay(file, ctxt.Stdout, info.Size())
 	defer d.close()
-	client.setDisplay(d)
-	defer client.setDisplay(nil)
+	client.filler.setDisplay(d)
+	defer client.filler.setDisplay(nil)
 	rev, err = client.UploadResource(charmId, name, file, f, info.Size(), d)
 	if err != nil {
 		return 0, errgo.Notef(err, "can't upload resource")
@@ -326,8 +327,8 @@ func (a visitorAdaptor) VisitWebPage(c *httpbakery.Client, u map[string]*url.URL
 }
 
 type progressClearFiller struct {
-	f form.Filler
-	mu sync.Mutex
+	f       esform.Filler
+	mu      sync.Mutex
 	display *progressDisplay
 }
 
@@ -340,12 +341,12 @@ func (filler *progressClearFiller) setDisplay(display *progressDisplay) {
 func (filler *progressClearFiller) setDisplayEnabled(enabled bool) {
 	filler.mu.Lock()
 	defer filler.mu.Unlock()
-	if filler.display != nil [
+	if filler.display != nil {
 		filler.display.setEnabled(enabled)
 	}
 }
 
-func (filler *progressClearFiller) Fill(f Form) (map[string]interface{}, error) {
+func (filler *progressClearFiller) Fill(f esform.Form) (map[string]interface{}, error) {
 	// Disable status update while the form is being filled out.
 	filler.setDisplayEnabled(false)
 	defer filler.setDisplayEnabled(true)
@@ -357,7 +358,7 @@ type progressDisplay struct {
 	monitor *iomon.Monitor
 	printer *iomon.Printer
 
-	mu sync.Mutex
+	mu      sync.Mutex
 	enabled bool
 }
 
@@ -376,10 +377,11 @@ func newProgressDisplay(name string, w io.Writer, size int64) *progressDisplay {
 // SetStatus implements iomon.StatusSetter. It doesn't
 // print the status if display is disabled.
 func (d *progressDisplay) SetStatus(s iomon.Status) {
+	logger.Infof("enabled: %s", d.isEnabled())
 	if d.isEnabled() {
 		d.printer.SetStatus(s)
 	}
-}	
+}
 
 func (d *progressDisplay) setEnabled(enabled bool) {
 	d.mu.Lock()
@@ -400,6 +402,7 @@ func (d *progressDisplay) close() {
 func (d *progressDisplay) Transferred(n int64) {
 	// d.monitor should always be non-nil because Transferred
 	// should never be called after Finalizing but be defensive just in case.
+	logger.Infof("Transferred %p %v", d.monitor, n)
 	if d.monitor != nil {
 		d.monitor.Update(n)
 	}

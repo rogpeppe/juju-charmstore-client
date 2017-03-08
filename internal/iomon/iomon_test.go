@@ -10,9 +10,9 @@ import (
 
 	"github.com/juju/testing"
 	jc "github.com/juju/testing/checkers"
+	gc "gopkg.in/check.v1"
 
 	"github.com/juju/charmstore-client/internal/iomon"
-	gc "gopkg.in/check.v1"
 )
 
 type iomonSuite struct{}

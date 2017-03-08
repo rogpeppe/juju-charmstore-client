@@ -76,7 +76,7 @@ func (s *attachSuite) TestRun(c *gc.C) {
 	c.Assert(err, gc.IsNil)
 
 	stdout, stderr, exitCode := run(dir, "attach", "--channel=unpublished", "~bob/precise/wordpress", "someResource=bar.zip")
-	c.Check(stdout, gc.Matches, `(\r.*)+\nuploaded revision 0 of someResource\n`)
+	c.Check(stdout, gc.Matches, `((\r.*)+\n)?uploaded revision 0 of someResource\n`)
 	c.Check(stderr, gc.Equals, "")
 	c.Assert(exitCode, gc.Equals, 0)
 
