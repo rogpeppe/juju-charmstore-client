@@ -181,7 +181,7 @@ func (c *pushCommand) Run(ctxt *cmd.Context) error {
 	}
 
 	if ch != nil {
-		if err := c.pushResources(ctxt, client.Client, ch.Meta(), ctxt.Stdout); err != nil {
+		if err := c.pushResources(ctxt, client, ch.Meta(), ctxt.Stdout); err != nil {
 			return errgo.Notef(err, "cannot push charm resources")
 		}
 	}
@@ -189,7 +189,7 @@ func (c *pushCommand) Run(ctxt *cmd.Context) error {
 	return nil
 }
 
-func (c *pushCommand) pushResources(ctxt *cmd.Context, client *csclient.Client, meta *charm.Meta, stdout io.Writer) error {
+func (c *pushCommand) pushResources(ctxt *cmd.Context, client *csClient, meta *charm.Meta, stdout io.Writer) error {
 	// Upload resources in alphabetical order so we do things
 	// deterministically.
 	resourceNames := make([]string, 0, len(c.resources))
@@ -206,7 +206,7 @@ func (c *pushCommand) pushResources(ctxt *cmd.Context, client *csclient.Client, 
 	return nil
 }
 
-func (c *pushCommand) uploadResource(ctxt *cmd.Context, client *csclient.Client, name, file string) error {
+func (c *pushCommand) uploadResource(ctxt *cmd.Context, client *csClient, name, file string) error {
 	rev, err := uploadResource(ctxt, client, c.id, name, file)
 	if err != nil {
 		return errgo.Mask(err)

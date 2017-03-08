@@ -91,7 +91,7 @@ func (c *attachCommand) Run(ctxt *cmd.Context) error {
 		return errgo.New("A revision is required when attaching to a charm in the stable channel.")
 	}
 
-	rev, err := uploadResource(ctxt, client.Client, c.id, c.name, c.file)
+	rev, err := uploadResource(ctxt, client, c.id, c.name, c.file)
 	if err != nil {
 		return errgo.Mask(err)
 	}
