@@ -308,10 +308,10 @@ func (s *pushSuite) TestUploadCharmWithResources(c *gc.C) {
 	expectOutput := fmt.Sprintf(`
 url: cs:~bob/trusty/something-0
 channel: unpublished
-(\r.*)+
-Uploaded %q as data-0
-(\r.*)+
-Uploaded %q as website-0
+((\r.*)+
+)?Uploaded %q as data-0
+((\r.*)+
+)?Uploaded %q as website-0
 `[1:], dataPath, websitePath,
 	)
 	c.Assert(stdout, gc.Matches, expectOutput)
