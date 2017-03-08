@@ -377,7 +377,6 @@ func newProgressDisplay(name string, w io.Writer, size int64) *progressDisplay {
 // SetStatus implements iomon.StatusSetter. It doesn't
 // print the status if display is disabled.
 func (d *progressDisplay) SetStatus(s iomon.Status) {
-	logger.Infof("enabled: %s", d.isEnabled())
 	if d.isEnabled() {
 		d.printer.SetStatus(s)
 	}
@@ -402,7 +401,6 @@ func (d *progressDisplay) close() {
 func (d *progressDisplay) Transferred(n int64) {
 	// d.monitor should always be non-nil because Transferred
 	// should never be called after Finalizing but be defensive just in case.
-	logger.Infof("Transferred %p %v", d.monitor, n)
 	if d.monitor != nil {
 		d.monitor.Update(n)
 	}
