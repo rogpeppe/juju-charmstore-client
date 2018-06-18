@@ -99,3 +99,30 @@ func (srv *dockerHandler) addRequest(req interface{}) {
 	defer srv.mu.Unlock()
 	srv.reqs = append(srv.reqs, req)
 }
+
+func newDockerRegistryHandler() *dockerHandler {
+	return &dockerRegistryHandler{}
+}
+
+type dockerRegistryHandler struct {
+	contents map[string] struct {
+		version int
+		digest string
+	}
+}
+
+serve /v2/
+	look for token
+	if not there, return 401 response with realm, service, etc
+
+serve /v2/..../manifests/:tag
+	return header:
+	Docker-Distribution-Api-Version: "registry/2.0"
+	Docker-Content-Digest: "sha256:xxxxx"
+
+
+type dockerAuthHandler struct {
+}
+
+serve /token
+	return token
