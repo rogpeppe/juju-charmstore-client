@@ -20,14 +20,12 @@ import (
 	"github.com/juju/persistent-cookiejar"
 	planscmd "github.com/juju/plans-client/cmd"
 	termscmd "github.com/juju/terms-client/cmd"
-	"github.com/juju/usso"
 	"golang.org/x/net/publicsuffix"
 	"gopkg.in/errgo.v1"
 	charm "gopkg.in/juju/charm.v6"
 	"gopkg.in/juju/charmrepo.v4/csclient"
 	"gopkg.in/juju/charmrepo.v4/csclient/params"
 	esform "gopkg.in/juju/environschema.v1/form"
-	"gopkg.in/juju/idmclient.v1/ussologin"
 	"gopkg.in/juju/worker.v1"
 	"gopkg.in/macaroon-bakery.v2/httpbakery"
 	"gopkg.in/macaroon-bakery.v2/httpbakery/agent"
@@ -180,17 +178,9 @@ func newCharmStoreClient(ctxt *cmd.Context, auth authInfo, channel params.Channe
 		if err := agent.SetUpAuth(bakeryClient, agentInfo); err != nil {
 			return nil, errgo.Notef(err, "cannot set up agent authentication")
 		}
-	} else if auth.noBrowser {
-		tokenStore := ussologin.NewFileTokenStore(ussoTokenPath())
-		bakeryClient.AddInteractor(ussologin.NewInteractor(ussologin.StoreTokenGetter{
-			Store: tokenStore,
-			TokenGetter: ussologin.FormTokenGetter{
-				Filler: filler,
-				Name:   "charm",
-			},
-		}))
+	} else if !auth.noBrowser {
+		bakeryClient.AddInteractor(httpbakery.WebBrowserInteractor{})
 	}
-	bakeryClient.AddInteractor(httpbakery.WebBrowserInteractor{})
 	csClient := csClient{
 		filler: filler,
 		Client: csclient.New(csclient.Params{
@@ -287,52 +277,6 @@ func (a *authInfo) String() string {
 		return ""
 	}
 	return a.username + ":" + a.password
-}
-
-func ussoTokenPath() string {
-	return osenv.JujuXDGDataHomePath("store-usso-token")
-}
-
-// translateError translates err into a new error with a more
-// understandable error message. If err is not translated then it will be
-// returned unchanged.
-func translateError(err error) error {
-	if err == nil {
-		return err
-	}
-	cause := errgo.Cause(err)
-	switch {
-	case httpbakery.IsInteractionError(cause):
-		err := translateInteractionError(cause.(*httpbakery.InteractionError))
-		return errgo.Notef(err, "login failed")
-	}
-	return err
-}
-
-// translateInteractionError translates err into a new error with a user
-// understandable error message.
-func translateInteractionError(err *httpbakery.InteractionError) error {
-	ussoError, ok := errgo.Cause(err.Reason).(*usso.Error)
-	if !ok {
-		return err.Reason
-	}
-	if ussoError.Code != "INVALID_DATA" {
-		return ussoError
-	}
-	for k, v := range ussoError.Extra {
-		// Only report the first error, this will be an arbitrary
-		// field from the extra information. In general the extra
-		// information only contains one item.
-		if k == "email" {
-			// Translate email to username so that it matches the prompt.
-			k = "username"
-		}
-		if v1, ok := v.([]interface{}); ok && len(v1) > 0 {
-			v = v1[0]
-		}
-		return errgo.Newf("%s: %s", k, v)
-	}
-	return ussoError
 }
 
 type progressClearFiller struct {

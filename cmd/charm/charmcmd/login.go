@@ -39,5 +39,5 @@ func (c *loginCommand) Run(ctxt *cmd.Context) error {
 		return errgo.Notef(err, "cannot create charm store client")
 	}
 	defer client.jar.Save()
-	return translateError(client.Login())
+	return errgo.Mask(client.Login())
 }

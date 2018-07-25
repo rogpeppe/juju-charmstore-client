@@ -8,8 +8,6 @@ var (
 	CSClientServerURL                      = &csclientServerURL
 	PluginTopicText                        = pluginTopicText
 	ServerURL                              = serverURL
-	TranslateError                         = translateError
-	USSOTokenPath                          = ussoTokenPath
 	PluginDescriptionLastCallReturnedCache = &pluginDescriptionLastCallReturnedCache
 	WhiteListedCommands                    = whiteListedCommands
 )

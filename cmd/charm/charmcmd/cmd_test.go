@@ -23,7 +23,6 @@ import (
 	"github.com/juju/juju/juju/osenv"
 	"github.com/juju/loggo"
 	"github.com/juju/mgotest"
-	"github.com/juju/usso"
 	"github.com/juju/utils"
 	"gopkg.in/errgo.v1"
 	"gopkg.in/juju/charm.v6"
@@ -33,7 +32,6 @@ import (
 	"gopkg.in/juju/idmclient.v1/idmtest"
 	bakery2u "gopkg.in/macaroon-bakery.v2-unstable/bakery"
 	"gopkg.in/macaroon-bakery.v2/bakery"
-	"gopkg.in/macaroon-bakery.v2/httpbakery"
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/juju/charmstore-client/cmd/charm/charmcmd"
@@ -242,78 +240,6 @@ func (s *cmdSuite) TestServerURLFromEnvContext(c *qt.C) {
 	_, stderr, code = run(c.Mkdir(), "show", "--list")
 	c.Assert(stderr, qt.Matches, "")
 	c.Assert(code, qt.Equals, 0)
-}
-
-var translateErrorTests = []struct {
-	about       string
-	err         error
-	expectError string
-}{{
-	about: "nil",
-	err:   nil,
-}, {
-	about: "unrecognised error",
-	err:   errgo.New("test error"),
-}, {
-	about: "interaction error",
-	err: &httpbakery.InteractionError{
-		Reason: errgo.New("test error"),
-	},
-	expectError: "login failed: test error",
-}, {
-	about: "Ubuntu SSO error",
-	err: &httpbakery.InteractionError{
-		Reason: &usso.Error{
-			Message: "test usso error",
-		},
-	},
-	expectError: "login failed: test usso error",
-}, {
-	about: "Ubuntu SSO INVALID_DATA error without extra info",
-	err: &httpbakery.InteractionError{
-		Reason: &usso.Error{
-			Code:    "INVALID_DATA",
-			Message: "invalid data",
-		},
-	},
-	expectError: "login failed: invalid data",
-}, {
-	about: "Ubuntu SSO INVALID_DATA with extra info",
-	err: &httpbakery.InteractionError{
-		Reason: &usso.Error{
-			Code: "INVALID_DATA",
-			Extra: map[string]interface{}{
-				"key": "value",
-			},
-		},
-	},
-	expectError: "login failed: key: value",
-}, {
-	about: "Ubuntu SSO INVALID_DATA with email extra info",
-	err: &httpbakery.InteractionError{
-		Reason: &usso.Error{
-			Code: "INVALID_DATA",
-			Extra: map[string]interface{}{
-				"email": []interface{}{
-					"value",
-				},
-			},
-		},
-	},
-	expectError: "login failed: username: value",
-}}
-
-func (s *cmdSuite) TestTranslateError(c *qt.C) {
-	for _, test := range translateErrorTests {
-		c.Run(test.about, func(c *qt.C) {
-			err := charmcmd.TranslateError(test.err)
-			if test.expectError == "" {
-				c.Assert(err, qt.Equals, test.err)
-			} else {
-				c.Assert(err, qt.ErrorMatches, test.expectError)
-			}
-		})
-	}
 }
 
 type bakeryV2LocatorToV2uLocator struct {

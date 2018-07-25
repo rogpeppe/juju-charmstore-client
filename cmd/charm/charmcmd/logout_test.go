@@ -10,11 +10,8 @@ import (
 	"testing"
 
 	qt "github.com/frankban/quicktest"
-	"github.com/juju/juju/juju/osenv"
 	"github.com/juju/persistent-cookiejar"
 	"golang.org/x/net/publicsuffix"
-
-	"github.com/juju/charmstore-client/cmd/charm/charmcmd"
 )
 
 type logoutSuite struct {
@@ -53,22 +50,6 @@ func (s *logoutSuite) TestWithCookie(c *qt.C) {
 	s.checkNoUser(c)
 }
 
-func (s *logoutSuite) TestWithToken(c *qt.C) {
-	s.discharger.SetDefaultUser("test-user")
-	f, err := os.Create(osenv.JujuXDGDataHomePath("store-usso-token"))
-	c.Assert(err, qt.Equals, nil)
-	_, err = f.Write([]byte("TEST!"))
-	c.Assert(err, qt.Equals, nil)
-	c.Assert(f.Close(), qt.Equals, nil)
-	c.Assert(isNonEmptyFile(charmcmd.USSOTokenPath()), qt.Equals, true)
-	dir := c.Mkdir()
-	stdout, stderr, code := run(dir, "logout")
-	c.Assert(stdout, qt.Equals, "")
-	c.Assert(stderr, qt.Matches, "")
-	c.Assert(code, qt.Equals, 0)
-	s.checkNoUser(c)
-}
-
 func (s *logoutSuite) checkNoUser(c *qt.C) {
 	s.discharger.SetDefaultUser("test-user")
 	jar, err := cookiejar.New(&cookiejar.Options{
@@ -82,7 +63,6 @@ func (s *logoutSuite) checkNoUser(c *qt.C) {
 	for _, cookie := range cookies {
 		c.Assert(strings.HasPrefix(cookie.Name, "macaroon-"), qt.Equals, false, qt.Commentf("cookie %s found", cookie.Name))
 	}
-	c.Assert(fileExists(charmcmd.USSOTokenPath()), qt.Equals, false)
 }
 
 func isNonEmptyFile(path string) bool {

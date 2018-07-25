@@ -9,7 +9,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 
 	"github.com/juju/cmd"
@@ -37,10 +36,6 @@ func (c *logoutCommand) Info() *cmd.Info {
 }
 
 func (c *logoutCommand) Run(ctxt *cmd.Context) error {
-	// Delete any Ubuntu SSO token.
-	if err := os.Remove(ussoTokenPath()); err != nil && !os.IsNotExist(err) {
-		return errgo.New("cannot remove Ubuntu SSO token")
-	}
 	client, err := newCharmStoreClient(ctxt, authInfo{}, params.NoChannel)
 	if err != nil {
 		return errgo.Notef(err, "cannot create charm store client")
